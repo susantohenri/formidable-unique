@@ -10,8 +10,13 @@ jQuery(function () {
         }
         for (var source of sources) {
             jQuery(`[name="item_meta[${source}]"]`).change(function () {
+                var values = {}
+                for (var field of sources) values[field] = jQuery(`[name="item_meta[${field}]"]`).val()
                 jQuery.post(formidable_unique.generator_url, {
-
+                    target: target.attr(`name`).replace(`item_meta[`,``).replace(`]`, ``),
+                    combination,
+                    sources,
+                    values
                 }, unique => {
                     target.val(unique)
                 })

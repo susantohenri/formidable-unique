@@ -22,8 +22,9 @@
 
 define('FORMIDABLE_UNIQUE_SHORTCODE', 'formidable-unique');
 define('FORMIDABLE_UNIQUE_ATTR', 'data-unique');
-define('FORMIDABLE_ATTR_SEPARATOR', '-');
-define('FORMIDABLE_FIELD_IDENTIFIER_PREFIX', 'field');
+define('FORMIDABLE_UNIQUE_ATTR_SEPARATOR', '-');
+define('FORMIDABLE_UNIQUE_FIELD_IDENTIFIER_PREFIX', 'field');
+define('FORMIDABLE_UNIQUE_INCREMENT_LENGTH', 3);
 
 add_shortcode(FORMIDABLE_UNIQUE_SHORTCODE, function () {
     wp_register_script('formidable-unique', plugin_dir_url(__FILE__) . 'formidable-unique.js', array('jquery'));
@@ -34,8 +35,8 @@ add_shortcode(FORMIDABLE_UNIQUE_SHORTCODE, function () {
         array(
             'generator_url' => site_url('wp-json/formidable-unique/v1/generate?cache-breaker=' . time()),
             'attribute' => FORMIDABLE_UNIQUE_ATTR,
-            'separator' => FORMIDABLE_ATTR_SEPARATOR,
-            'field_identifier' => FORMIDABLE_FIELD_IDENTIFIER_PREFIX
+            'separator' => FORMIDABLE_UNIQUE_ATTR_SEPARATOR,
+            'field_identifier' => FORMIDABLE_UNIQUE_FIELD_IDENTIFIER_PREFIX
         )
     );
 });
@@ -48,7 +49,44 @@ add_action('rest_api_init', function () {
             'methods' => 'POST',
             'permission_callback' => '__return_true',
             'callback' => function () {
-                return 'helloworld';
+                $target = $_POST['target'];
+                $combination = $_POST['combination'];
+                $sources = $_POST['sources'];
+                $values = $_POST['values'];
+
+                $combination = explode(FORMIDABLE_UNIQUE_ATTR_SEPARATOR, $combination);
+                $combination = array_map(function ($word) use ($values) {
+                    if (-1 < strpos($word, FORMIDABLE_UNIQUE_FIELD_IDENTIFIER_PREFIX)) {
+                        $field = str_replace(FORMIDABLE_UNIQUE_FIELD_IDENTIFIER_PREFIX, '', $word);
+                        $word = $values[$field];
+                    }
+                    return $word;
+                }, $combination);
+                $combination = implode(FORMIDABLE_UNIQUE_ATTR_SEPARATOR, $combination);
+
+                global $wpdb;
+                $answers = $wpdb->get_results($wpdb->prepare("
+                    SELECT
+                        {$wpdb->prefix}frm_item_metas.meta_value answer
+                    FROM {$wpdb->prefix}frm_item_metas
+                    WHERE {$wpdb->prefix}frm_item_metas.field_id = %d
+                    AND {$wpdb->prefix}frm_item_metas.meta_value LIKE '{$combination}%'
+                    ORDER BY {$wpdb->prefix}frm_item_metas.meta_value DESC
+                ", $target));
+
+                $increment = 1;
+
+                if ($answers) {
+                    $latest = $answers[0]->answer;
+                    $latest = explode(FORMIDABLE_UNIQUE_ATTR_SEPARATOR, $latest);
+                    $increment = end($latest);
+                    $increment = (int) $increment;
+                    $increment++;
+                }
+
+                $max_length_digit = FORMIDABLE_UNIQUE_INCREMENT_LENGTH;
+                $combination .= FORMIDABLE_UNIQUE_ATTR_SEPARATOR . sprintf("%0{$max_length_digit}d", $increment);
+                return $combination;
             }
         )
     );
