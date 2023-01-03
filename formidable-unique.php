@@ -22,7 +22,7 @@
 
 define('FORMIDABLE_UNIQUE_SHORTCODE', 'formidable-unique');
 define('FORMIDABLE_UNIQUE_ATTR', 'data-unique');
-define('FORMIDABLE_UNIQUE_ATTR_SEPARATOR', '-');
+define('FORMIDABLE_UNIQUE_ATTR_SEPARATOR', ' ');
 define('FORMIDABLE_UNIQUE_FIELD_IDENTIFIER_PREFIX', 'field');
 define('FORMIDABLE_UNIQUE_INCREMENT_LENGTH', 3);
 
@@ -63,6 +63,8 @@ add_action('rest_api_init', function () {
                     return $word;
                 }, $combination);
                 $combination = implode(FORMIDABLE_UNIQUE_ATTR_SEPARATOR, $combination);
+                while ('-' === substr($combination, -1)) $combination = substr($combination, 0, -1);
+                while ('-' === substr($combination, 1)) $combination = substr($combination, 0, 1);
 
                 global $wpdb;
                 $answers = $wpdb->get_results($wpdb->prepare("

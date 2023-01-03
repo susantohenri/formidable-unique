@@ -14,6 +14,7 @@ jQuery(function () {
                 for (var field of sources) {
                     if (0 < jQuery(`[name="item_meta[${field}][first]"]`).length) {
                         values[field] = jQuery(`[name="item_meta[${field}][first]"]`).val()
+                        values[field] += ' '
                         values[field] += jQuery(`[name="item_meta[${field}][last]"]`).val()
                     }
                     else values[field] = jQuery(`[name="item_meta[${field}]"]`).val()
