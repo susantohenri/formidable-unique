@@ -9,11 +9,17 @@ jQuery(function () {
             }
         }
         for (var source of sources) {
-            jQuery(`[name="item_meta[${source}]"]`).change(function () {
+            jQuery(`[name="item_meta[${source}]"], [name="item_meta[${source}][first]"], [name="item_meta[${source}][last]"]`).change(function () {
                 var values = {}
-                for (var field of sources) values[field] = jQuery(`[name="item_meta[${field}]"]`).val()
+                for (var field of sources) {
+                    if (0 < jQuery(`[name="item_meta[${field}][first]"]`).length) {
+                        values[field] = jQuery(`[name="item_meta[${field}][first]"]`).val()
+                        values[field] += jQuery(`[name="item_meta[${field}][last]"]`).val()
+                    }
+                    else values[field] = jQuery(`[name="item_meta[${field}]"]`).val()
+                }
                 jQuery.post(formidable_unique.generator_url, {
-                    target: target.attr(`name`).replace(`item_meta[`,``).replace(`]`, ``),
+                    target: target.attr(`name`).replace(`item_meta[`, ``).replace(`]`, ``),
                     combination,
                     sources,
                     values
