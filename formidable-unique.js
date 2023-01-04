@@ -20,11 +20,17 @@ jQuery(function () {
         var values = {}
         for (var field of sources) {
             if (0 < jQuery(`[name="item_meta[${field}][first]"]`).length) {
-                values[field] = jQuery(`[name="item_meta[${field}][first]"]`).val()
-                values[field] += ' '
-                values[field] += jQuery(`[name="item_meta[${field}][last]"]`).val()
+                var first = jQuery(`[name="item_meta[${field}][first]"]`).val().trim()
+                var last = jQuery(`[name="item_meta[${field}][last]"]`).val().trim()
+                values[field] = `` !== first && `` !== last ? `${first} ${last}` : `${first}${last}`
             }
-            else values[field] = jQuery(`[name="item_meta[${field}]"]`).val()
+            else {
+                values[field] = jQuery(`[name="item_meta[${field}]"]`).val()
+                if (values[field]) {
+                    while(-1 < values[field].indexOf(`  `)) values[field] = values[field].replaceAll(`  `, ` `)
+                    values[field] = values[field].trim()
+                }
+            }
         }
         jQuery.post(formidable_unique.generator_url, {
             target: target.attr(`name`).replace(`item_meta[`, ``).replace(`]`, ``),
